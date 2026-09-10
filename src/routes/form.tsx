@@ -367,7 +367,7 @@ function PhotoBox({
 }: {
   index: number;
   label: string;
-  value?: string;
+  value?: string | undefined;
   onPick: (dataUrl: string) => void;
 }) {
   const [working, setWorking] = useState(false);
