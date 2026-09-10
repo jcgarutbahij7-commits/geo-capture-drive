@@ -26,8 +26,12 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function statusChip(r: Report) {
-  if (r.status === "sent") return <span className="chip-sent">TERKIRIM</span>;
+function statusChip(r: Report, entry?: QueueEntry) {
+  if (entry?.state === "uploading")
+    return <span className="chip-pending">MENGIRIM...</span>;
+  if (entry?.state === "error")
+    return <span className="chip-pending bg-destructive text-destructive-foreground">GAGAL ✗</span>;
+  if (r.status === "sent") return <span className="chip-sent">TERKIRIM ✓</span>;
   if (r.status === "pending") return <span className="chip-pending">PENDING</span>;
   return <span className="chip-draft">TERSIMPAN</span>;
 }
