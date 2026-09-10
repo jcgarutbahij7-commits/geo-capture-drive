@@ -2,9 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { loadProfile, loadReports, saveProfile } from "@/lib/local-store";
 import { mapsUrl, type Profile, type Report } from "@/lib/types";
-import { uploadReport } from "@/lib/upload";
 import { driveStatus, verifyPassword } from "@/lib/owner.functions";
-import { playUploadSuccess } from "@/lib/sound";
+import { enqueueUpload, queueSnapshot, subscribeQueue, type QueueEntry } from "@/lib/upload-queue";
 
 export const Route = createFileRoute("/")({
   head: () => ({
