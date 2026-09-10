@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      submissions: {
+        Row: {
+          address: string
+          company: string
+          cpcl_name: string
+          cpcl_no: string
+          cpcl_phone: string
+          created_at: string
+          drive_folder_id: string | null
+          id: string
+          latitude: number | null
+          local_id: string | null
+          longitude: number | null
+          nik: string
+          officer_name: string
+          officer_phone: string
+          pelimpahan: boolean
+          pelimpahan_name: string | null
+          photo_count: number
+          status: string
+          submitted_at: string
+          village: string
+        }
+        Insert: {
+          address: string
+          company: string
+          cpcl_name: string
+          cpcl_no: string
+          cpcl_phone: string
+          created_at?: string
+          drive_folder_id?: string | null
+          id?: string
+          latitude?: number | null
+          local_id?: string | null
+          longitude?: number | null
+          nik: string
+          officer_name: string
+          officer_phone: string
+          pelimpahan?: boolean
+          pelimpahan_name?: string | null
+          photo_count?: number
+          status?: string
+          submitted_at?: string
+          village: string
+        }
+        Update: {
+          address?: string
+          company?: string
+          cpcl_name?: string
+          cpcl_no?: string
+          cpcl_phone?: string
+          created_at?: string
+          drive_folder_id?: string | null
+          id?: string
+          latitude?: number | null
+          local_id?: string | null
+          longitude?: number | null
+          nik?: string
+          officer_name?: string
+          officer_phone?: string
+          pelimpahan?: boolean
+          pelimpahan_name?: string | null
+          photo_count?: number
+          status?: string
+          submitted_at?: string
+          village?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
