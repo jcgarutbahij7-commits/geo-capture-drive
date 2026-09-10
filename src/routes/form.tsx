@@ -299,28 +299,6 @@ function FormPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 px-6">
           <div className="card w-full max-w-sm">
             <p className="text-base font-semibold">{dialog}</p>
-            <div className="mt-4 grid gap-2">
-              <button
-                className="btn-primary"
-                onClick={() => {
-                  const goHome = dialog.startsWith("Berhasil terkirim");
-                  setDialog(null);
-                  reset();
-                  if (goHome) void router.navigate({ to: "/" });
-                }}
-              >
-                {dialog.startsWith("Berhasil terkirim") ? "KEMBALI KE DASHBOARD" : "ISIAN BARU"}
-              </button>
-              <button
-                className="btn-outline"
-                onClick={() => {
-                  setDialog(null);
-                  void router.navigate({ to: "/" });
-                }}
-              >
-                LIHAT DASHBOARD
-              </button>
-            </div>
           </div>
         </div>
       )}
