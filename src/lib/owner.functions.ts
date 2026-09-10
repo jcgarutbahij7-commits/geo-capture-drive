@@ -133,6 +133,6 @@ export const driveStatus = createServerFn({ method: "POST" })
     return {
       serviceAccountConfigured: Boolean(raw),
       serviceAccountEmail: email,
-      rootFolderConfigured: Boolean(process.env["DRIVE_ROOT_FOLDER_ID"]),
+      rootFolderConfigured: Boolean(process.env["GOOGLE_DRIVE_FOLDER_ID"]),
     };
   });

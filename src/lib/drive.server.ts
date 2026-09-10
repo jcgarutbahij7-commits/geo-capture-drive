@@ -90,8 +90,8 @@ async function driveFetch(url: string, init?: RequestInit) {
 }
 
 function rootFolderId() {
-  const id = process.env["DRIVE_ROOT_FOLDER_ID"];
-  if (!id) throw new Error("DRIVE_ROOT_FOLDER_ID belum diatur");
+  const id = process.env["GOOGLE_DRIVE_FOLDER_ID"];
+  if (!id) throw new Error("GOOGLE_DRIVE_FOLDER_ID belum diatur");
   return id;
 }
 
