@@ -128,7 +128,7 @@ function Dashboard() {
           <Link to="/form" className="btn-primary">
             + ISIAN BARU
           </Link>
-          <button className="btn-accent" onClick={sendAll} disabled={busy !== null || !pendingCount}>
+          <button className="btn-accent" onClick={sendAll} disabled={!pendingCount}>
             KIRIM SEMUA ({pendingCount})
           </button>
         </div>
@@ -156,7 +156,7 @@ function Dashboard() {
                     {r.village} - {new Date(r.savedAt).toLocaleString("id-ID")}
                   </p>
                 </div>
-                {statusChip(r)}
+                {statusChip(r, queue.get(r.localId))}
               </div>
               <p className="mt-2 text-sm">
                 Pelimpahan: {r.pelimpahan === "YA" ? `YA - ${r.pelimpahanName}` : "BUKAN"}
@@ -172,14 +172,23 @@ function Dashboard() {
                   {r.latitude.toFixed(6)}, {r.longitude?.toFixed(6)}
                 </a>
               )}
-              {r.status !== "sent" && (
-                <button
-                  className="btn-outline mt-3"
-                  onClick={() => void send(r)}
-                  disabled={busy !== null}
-                >
-                  {busy === r.localId ? "MENGIRIM..." : "KIRIM ULANG"}
-                </button>
+              {queue.get(r.localId)?.state === "uploading" ? (
+                <p className="mt-3 text-sm font-semibold text-primary">
+                  {queue.get(r.localId)?.detail}
+                </p>
+              ) : (
+                r.status !== "sent" && (
+                  <>
+                    {queue.get(r.localId)?.state === "error" && (
+                      <p className="mt-2 text-sm text-destructive">
+                        Gagal: {queue.get(r.localId)?.detail}
+                      </p>
+                    )}
+                    <button className="btn-outline mt-3" onClick={() => send(r)}>
+                      KIRIM ULANG
+                    </button>
+                  </>
+                )
               )}
             </li>
           ))}
