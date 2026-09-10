@@ -349,6 +349,7 @@ function PhotoBox({
   onPick: (dataUrl: string) => void;
 }) {
   const [working, setWorking] = useState(false);
+  const [bytes, setBytes] = useState<number | null>(null);
   const inputId = `photo-${index}`;
 
   return (
@@ -365,7 +366,13 @@ function PhotoBox({
           {index}. {label}
         </p>
         <p className="mb-2 text-xs text-muted-foreground">
-          {working ? "Mengompres..." : value ? "Sudah diisi (di bawah 200 KB)" : "Wajib diisi"}
+          {working
+            ? "Mengompres..."
+            : value
+              ? bytes != null
+                ? sizeLabel(bytes)
+                : "Sudah diisi"
+              : "Wajib diisi"}
         </p>
         <label htmlFor={inputId} className="btn-soft py-2 text-sm">
           {value ? "GANTI PHOTO" : "AMBIL PHOTO"}
@@ -381,7 +388,9 @@ function PhotoBox({
             if (!file) return;
             setWorking(true);
             try {
-              onPick(await compressImage(file));
+              const out = await compressImage(file);
+              setBytes(out.bytes);
+              onPick(out.dataUrl);
             } finally {
               setWorking(false);
               e.target.value = "";

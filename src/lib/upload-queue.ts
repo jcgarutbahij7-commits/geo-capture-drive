@@ -105,9 +105,6 @@ export function startBackgroundSender() {
 
   const tick = async () => {
     if (!navigator.onLine) return;
-    for (const entry of [...entries.values()]) {
-      if (entry.state === "error" && entry.attempts >= MAX_ATTEMPTS) continue;
-    }
     const all = await loadReports();
     for (const r of all) {
       if (r.status === "sent") continue;
