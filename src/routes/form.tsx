@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { compressImage } from "@/lib/image";
+import { compressImage, sizeLabel } from "@/lib/image";
 import { loadProfile, newLocalId, saveReport } from "@/lib/local-store";
 import { PHOTO_FIELDS, type PhotoKey, type Profile, type Report } from "@/lib/types";
 import { enqueueUpload } from "@/lib/upload-queue";
@@ -134,7 +134,7 @@ function FormPage() {
   function handleSubmit() {
     setBusy(true);
     enqueueUpload(buildReport("pending"));
-    setDialog("Data tersimpan. Pengiriman ke Google Drive jalan di latar belakang...");
+    setDialog("Laporan terkirim ke antrian");
     setBusy(false);
     backToDashboard();
   }
@@ -155,6 +155,7 @@ function FormPage() {
         </p>
         <h1 className="mt-1 text-2xl font-bold">
           {step === 1 ? "Data CPCL" : "Kirim Photo"}
+
         </h1>
         <p className="mt-1 text-sm opacity-90">Slide {step} dari 2</p>
       </div>
@@ -278,11 +279,11 @@ function FormPage() {
             15. SIMPAN DI HANDPHONE
           </button>
           <button
-            className="btn-primary"
+            className="btn-send"
             disabled={!allPhotos || !coords || busy}
             onClick={() => void handleSubmit()}
           >
-            {busy ? "MENGIRIM..." : "16. KIRIM KE GOOGLE DRIVE"}
+            {busy ? "📤 MENGIRIM KE PERUSAHAAN..." : "📤 KIRIM KE PERUSAHAAN"}
           </button>
           {(!allPhotos || !coords) && (
             <p className="text-center text-xs text-muted-foreground">
