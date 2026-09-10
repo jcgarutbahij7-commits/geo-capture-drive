@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { compressImage } from "@/lib/image";
 import { loadProfile, newLocalId, saveReport } from "@/lib/local-store";
 import { PHOTO_FIELDS, type PhotoKey, type Profile, type Report } from "@/lib/types";
-import { uploadReport } from "@/lib/upload";
-import { playUploadSuccess } from "@/lib/sound";
+import { enqueueUpload } from "@/lib/upload-queue";
 
 export const Route = createFileRoute("/form")({
   head: () => ({
@@ -119,24 +118,25 @@ function FormPage() {
     setStep(1);
   }
 
-  async function handleSave() {
-    await saveReport(buildReport("draft"));
-    setDialog("Berhasil tersimpan di handphone. Anda bisa mengirimnya nanti dari dashboard.");
+  function backToDashboard() {
+    reset();
+    setTimeout(() => void router.navigate({ to: "/" }), 500);
   }
 
-  async function handleSubmit() {
+  async function handleSave() {
     setBusy(true);
-    try {
-      await uploadReport(buildReport("pending"));
-      playUploadSuccess();
-      setDialog("Berhasil terkirim ke Google Drive.");
-    } catch (e) {
-      setDialog(
-        `Belum terkirim: ${e instanceof Error ? e.message : "jaringan bermasalah"}. Data tersimpan sebagai draft di handphone, kirim ulang dari dashboard.`,
-      );
-    } finally {
-      setBusy(false);
-    }
+    await saveReport(buildReport("draft"));
+    setDialog("Berhasil tersimpan di handphone. Kembali ke dashboard...");
+    setBusy(false);
+    backToDashboard();
+  }
+
+  function handleSubmit() {
+    setBusy(true);
+    enqueueUpload(buildReport("pending"));
+    setDialog("Data tersimpan. Pengiriman ke Google Drive jalan di latar belakang...");
+    setBusy(false);
+    backToDashboard();
   }
 
   if (!profile) {
@@ -299,28 +299,6 @@ function FormPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 px-6">
           <div className="card w-full max-w-sm">
             <p className="text-base font-semibold">{dialog}</p>
-            <div className="mt-4 grid gap-2">
-              <button
-                className="btn-primary"
-                onClick={() => {
-                  const goHome = dialog.startsWith("Berhasil terkirim");
-                  setDialog(null);
-                  reset();
-                  if (goHome) void router.navigate({ to: "/" });
-                }}
-              >
-                {dialog.startsWith("Berhasil terkirim") ? "KEMBALI KE DASHBOARD" : "ISIAN BARU"}
-              </button>
-              <button
-                className="btn-outline"
-                onClick={() => {
-                  setDialog(null);
-                  void router.navigate({ to: "/" });
-                }}
-              >
-                LIHAT DASHBOARD
-              </button>
-            </div>
           </div>
         </div>
       )}

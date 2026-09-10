@@ -40,3 +40,16 @@ export function announceIncoming(company: string) {
   beep(1046, 0.12);
   setTimeout(() => speak(`${company}, masuk!`, { pitch: 2, rate: 1.15 }), 220);
 }
+
+/** Indonesian female voice: "PT <perusahaan> - data diterima dari <petugas>". */
+export function announceOwnerData(companyName: string, officerName: string) {
+  beep(1046, 0.12);
+  setTimeout(
+    () =>
+      speak(`PT ${companyName}, data diterima dari ${officerName}`, {
+        pitch: 1.7,
+        rate: 1.05,
+      }),
+    220,
+  );
+}

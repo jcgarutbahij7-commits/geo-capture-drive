@@ -2,9 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { loadProfile, loadReports, saveProfile } from "@/lib/local-store";
 import { mapsUrl, type Profile, type Report } from "@/lib/types";
-import { uploadReport } from "@/lib/upload";
 import { driveStatus, verifyPassword } from "@/lib/owner.functions";
-import { playUploadSuccess } from "@/lib/sound";
+import { enqueueUpload, queueSnapshot, subscribeQueue, type QueueEntry } from "@/lib/upload-queue";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,8 +26,12 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function statusChip(r: Report) {
-  if (r.status === "sent") return <span className="chip-sent">TERKIRIM</span>;
+function statusChip(r: Report, entry?: QueueEntry) {
+  if (entry?.state === "uploading")
+    return <span className="chip-pending">MENGIRIM...</span>;
+  if (entry?.state === "error")
+    return <span className="chip-pending bg-destructive text-destructive-foreground">GAGAL ✗</span>;
+  if (r.status === "sent") return <span className="chip-sent">TERKIRIM ✓</span>;
   if (r.status === "pending") return <span className="chip-pending">PENDING</span>;
   return <span className="chip-draft">TERSIMPAN</span>;
 }
@@ -37,7 +40,7 @@ function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [queue, setQueue] = useState<Map<string, QueueEntry>>(new Map());
   const [message, setMessage] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupPass, setSetupPass] = useState("");
@@ -58,30 +61,20 @@ function Dashboard() {
       if (!p) setEditing(true);
       await refresh();
     })();
+    setQueue(queueSnapshot());
+    return subscribeQueue(() => {
+      setQueue(queueSnapshot());
+      void refresh();
+    });
   }, [refresh]);
 
-  async function send(report: Report) {
-    setBusy(report.localId);
+  function send(report: Report) {
     setMessage(null);
-    try {
-      await uploadReport(report, (done, total) =>
-        setMessage(`Mengirim photo ${done}/${total} untuk ${report.cpclName}...`),
-      );
-      playUploadSuccess();
-      setMessage(`Data ${report.cpclNo} - ${report.cpclName} berhasil terkirim ke Google Drive.`);
-    } catch (e) {
-      setMessage(
-        `Gagal mengirim ${report.cpclNo}: ${e instanceof Error ? e.message : "jaringan bermasalah"}. Draft tetap aman di handphone.`,
-      );
-    } finally {
-      setBusy(null);
-      await refresh();
-    }
+    enqueueUpload(report);
   }
 
-  async function sendAll() {
-    const pending = reports.filter((r) => r.status !== "sent");
-    for (const r of pending) await send(r);
+  function sendAll() {
+    reports.filter((r) => r.status !== "sent").forEach((r) => enqueueUpload(r));
   }
 
   async function openSetup() {
@@ -135,7 +128,7 @@ function Dashboard() {
           <Link to="/form" className="btn-primary">
             + ISIAN BARU
           </Link>
-          <button className="btn-accent" onClick={sendAll} disabled={busy !== null || !pendingCount}>
+          <button className="btn-accent" onClick={sendAll} disabled={!pendingCount}>
             KIRIM SEMUA ({pendingCount})
           </button>
         </div>
@@ -163,7 +156,7 @@ function Dashboard() {
                     {r.village} - {new Date(r.savedAt).toLocaleString("id-ID")}
                   </p>
                 </div>
-                {statusChip(r)}
+                {statusChip(r, queue.get(r.localId))}
               </div>
               <p className="mt-2 text-sm">
                 Pelimpahan: {r.pelimpahan === "YA" ? `YA - ${r.pelimpahanName}` : "BUKAN"}
@@ -179,14 +172,23 @@ function Dashboard() {
                   {r.latitude.toFixed(6)}, {r.longitude?.toFixed(6)}
                 </a>
               )}
-              {r.status !== "sent" && (
-                <button
-                  className="btn-outline mt-3"
-                  onClick={() => void send(r)}
-                  disabled={busy !== null}
-                >
-                  {busy === r.localId ? "MENGIRIM..." : "KIRIM ULANG"}
-                </button>
+              {queue.get(r.localId)?.state === "uploading" ? (
+                <p className="mt-3 text-sm font-semibold text-primary">
+                  {queue.get(r.localId)?.detail}
+                </p>
+              ) : (
+                r.status !== "sent" && (
+                  <>
+                    {queue.get(r.localId)?.state === "error" && (
+                      <p className="mt-2 text-sm text-destructive">
+                        Gagal: {queue.get(r.localId)?.detail}
+                      </p>
+                    )}
+                    <button className="btn-outline mt-3" onClick={() => send(r)}>
+                      KIRIM ULANG
+                    </button>
+                  </>
+                )
               )}
             </li>
           ))}
