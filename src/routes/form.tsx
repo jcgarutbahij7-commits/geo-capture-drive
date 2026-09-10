@@ -119,24 +119,25 @@ function FormPage() {
     setStep(1);
   }
 
-  async function handleSave() {
-    await saveReport(buildReport("draft"));
-    setDialog("Berhasil tersimpan di handphone. Anda bisa mengirimnya nanti dari dashboard.");
+  function backToDashboard() {
+    reset();
+    setTimeout(() => void router.navigate({ to: "/" }), 500);
   }
 
-  async function handleSubmit() {
+  async function handleSave() {
     setBusy(true);
-    try {
-      await uploadReport(buildReport("pending"));
-      playUploadSuccess();
-      setDialog("Berhasil terkirim ke Google Drive.");
-    } catch (e) {
-      setDialog(
-        `Belum terkirim: ${e instanceof Error ? e.message : "jaringan bermasalah"}. Data tersimpan sebagai draft di handphone, kirim ulang dari dashboard.`,
-      );
-    } finally {
-      setBusy(false);
-    }
+    await saveReport(buildReport("draft"));
+    setDialog("Berhasil tersimpan di handphone. Kembali ke dashboard...");
+    setBusy(false);
+    backToDashboard();
+  }
+
+  function handleSubmit() {
+    setBusy(true);
+    enqueueUpload(buildReport("pending"));
+    setDialog("Data tersimpan. Pengiriman ke Google Drive jalan di latar belakang...");
+    setBusy(false);
+    backToDashboard();
   }
 
   if (!profile) {
