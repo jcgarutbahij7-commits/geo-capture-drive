@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { downloadExcel, listCompanies, listReports, type OwnerRow } from "@/lib/owner.functions";
-import { announceIncoming } from "@/lib/sound";
+import { announceOwnerData } from "@/lib/sound";
 import { mapsUrl } from "@/lib/types";
 
 export const Route = createFileRoute("/owner")({
@@ -25,6 +25,9 @@ export const Route = createFileRoute("/owner")({
   component: OwnerDashboard,
 });
 
+const SOUND_KEY = "owner-sound-on";
+const NAME_KEY = "owner-company-name";
+
 function OwnerDashboard() {
   const [password, setPassword] = useState("");
   const [unlocked, setUnlocked] = useState(false);
@@ -33,6 +36,35 @@ function OwnerDashboard() {
   const [rows, setRows] = useState<OwnerRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const known = useRef<Set<string>>(new Set());
+
+  // Settings (saved automatically in the phone/browser storage)
+  const [soundOn, setSoundOn] = useState(true);
+  const [companyName, setCompanyName] = useState("PERUSAHAAN");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [toast, setToast] = useState<string | null>(null);
+  const soundRef = useRef(true);
+
+  useEffect(() => {
+    const s = localStorage.getItem(SOUND_KEY);
+    if (s !== null) setSoundOn(s === "1");
+    const n = localStorage.getItem(NAME_KEY);
+    if (n) setCompanyName(n);
+  }, []);
+
+  useEffect(() => {
+    soundRef.current = soundOn;
+    localStorage.setItem(SOUND_KEY, soundOn ? "1" : "0");
+  }, [soundOn]);
+
+  useEffect(() => {
+    localStorage.setItem(NAME_KEY, companyName);
+  }, [companyName]);
+
+  const nameRef = useRef(companyName);
+  useEffect(() => {
+    nameRef.current = companyName;
+  }, [companyName]);
 
   async function unlock() {
     setError(null);
@@ -56,7 +88,13 @@ function OwnerDashboard() {
         const first = known.current.size === 0;
         data.forEach((r) => known.current.add(r.id));
         setRows(data);
-        if (!first && fresh.length > 0) announceIncoming(company);
+        if (!first && fresh.length > 0) {
+          const officer = fresh[0]?.officerName ?? "PETUGAS";
+          setUnread((u) => u + fresh.length);
+          setToast(`Data baru dari ${officer}`);
+          setTimeout(() => setToast(null), 3000);
+          if (soundRef.current) announceOwnerData(nameRef.current || "PERUSAHAAN", officer);
+        }
       } catch (e) {
         if (!stop) setError(e instanceof Error ? e.message : "Gagal memuat data");
       }
@@ -114,9 +152,50 @@ function OwnerDashboard() {
       <div className="hero-bar">
         <h1 className="text-2xl font-bold">Dashboard Owner</h1>
         <p className="mt-1 text-sm opacity-90">Pilih perusahaan untuk melihat data masuk</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            className="rounded-full bg-background/90 px-3 py-1 text-xs font-bold text-foreground"
+            onClick={() => setSoundOn((v) => !v)}
+          >
+            {soundOn ? "🔊 Notifikasi: ON" : "🔇 Notifikasi: OFF"}
+          </button>
+          <button
+            className="rounded-full bg-background/90 px-3 py-1 text-xs font-bold text-foreground"
+            onClick={() => setSettingsOpen((v) => !v)}
+          >
+            ⚙ Pengaturan
+          </button>
+        </div>
       </div>
 
-      <div className="card grid gap-3">
+      {settingsOpen && (
+        <div className="card mt-4 grid gap-2">
+          <label className="label">Nama Perusahaan (untuk suara notifikasi)</label>
+          <input
+            className="field uppercase"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value.toUpperCase())}
+          />
+          <p className="text-xs text-muted-foreground">
+            Suara: "PT {companyName || "PERUSAHAAN"} - DATA DITERIMA DARI [NAMA PETUGAS]"
+          </p>
+        </div>
+      )}
+
+      <div className="card mt-4 grid gap-3">
+        <div className="flex items-center justify-between">
+          <button
+            className="flex items-center gap-2 text-base font-bold"
+            onClick={() => setUnread(0)}
+          >
+            Data Masuk
+            {unread > 0 && (
+              <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">
+                {unread}
+              </span>
+            )}
+          </button>
+        </div>
         <label className="label">Perusahaan</label>
         <select className="field" value={company} onChange={(e) => setCompany(e.target.value)}>
           <option value="">- PILIH PERUSAHAAN -</option>
@@ -189,6 +268,12 @@ function OwnerDashboard() {
             );
           })}
         </>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-lg">
+          {toast}
+        </div>
       )}
 
       <Link to="/" className="mt-6 block text-center text-sm font-semibold text-primary">
