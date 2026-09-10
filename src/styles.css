@@ -104,31 +104,39 @@
     border-color: var(--color-ring);
     box-shadow: 0 0 0 3px oklch(0.52 0.13 162 / 18%);
   }
-  .btn {
+  .btn,
+  .btn-primary,
+  .btn-accent,
+  .btn-soft,
+  .btn-outline {
     @apply inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-base font-semibold transition-transform active:scale-[0.98] disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-primary text-primary-foreground;
+    @apply bg-primary text-primary-foreground;
   }
   .btn-accent {
-    @apply btn bg-accent text-accent-foreground;
+    @apply bg-accent text-accent-foreground;
   }
   .btn-soft {
-    @apply btn bg-secondary text-secondary-foreground;
+    @apply bg-secondary text-secondary-foreground;
   }
   .btn-outline {
-    @apply btn border bg-card text-foreground;
+    @apply border bg-card text-foreground;
   }
-  .chip {
+  .chip,
+  .chip-sent,
+  .chip-pending,
+  .chip-draft {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold uppercase;
   }
   .chip-sent {
-    @apply chip bg-success text-success-foreground;
+    @apply bg-success text-success-foreground;
   }
   .chip-pending {
-    @apply chip bg-warning text-warning-foreground;
+    @apply bg-warning text-warning-foreground;
   }
   .chip-draft {
-    @apply chip bg-secondary text-secondary-foreground;
+    @apply bg-secondary text-secondary-foreground;
   }
+
 }
