@@ -24,7 +24,7 @@ export const Route = createFileRoute("/form")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: FormPage;
+  component: FormPage,
 });
 
 type Draft = {
