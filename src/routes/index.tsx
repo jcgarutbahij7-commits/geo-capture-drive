@@ -61,30 +61,20 @@ function Dashboard() {
       if (!p) setEditing(true);
       await refresh();
     })();
+    setQueue(queueSnapshot());
+    return subscribeQueue(() => {
+      setQueue(queueSnapshot());
+      void refresh();
+    });
   }, [refresh]);
 
-  async function send(report: Report) {
-    setBusy(report.localId);
+  function send(report: Report) {
     setMessage(null);
-    try {
-      await uploadReport(report, (done, total) =>
-        setMessage(`Mengirim photo ${done}/${total} untuk ${report.cpclName}...`),
-      );
-      playUploadSuccess();
-      setMessage(`Data ${report.cpclNo} - ${report.cpclName} berhasil terkirim ke Google Drive.`);
-    } catch (e) {
-      setMessage(
-        `Gagal mengirim ${report.cpclNo}: ${e instanceof Error ? e.message : "jaringan bermasalah"}. Draft tetap aman di handphone.`,
-      );
-    } finally {
-      setBusy(null);
-      await refresh();
-    }
+    enqueueUpload(report);
   }
 
-  async function sendAll() {
-    const pending = reports.filter((r) => r.status !== "sent");
-    for (const r of pending) await send(r);
+  function sendAll() {
+    reports.filter((r) => r.status !== "sent").forEach((r) => enqueueUpload(r));
   }
 
   async function openSetup() {
