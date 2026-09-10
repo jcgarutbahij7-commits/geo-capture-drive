@@ -40,7 +40,7 @@ function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [queue, setQueue] = useState<Map<string, QueueEntry>>(new Map());
   const [message, setMessage] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupPass, setSetupPass] = useState("");
