@@ -19,7 +19,9 @@ function notify() {
 
 export function subscribeQueue(fn: () => void) {
   listeners.add(fn);
-  return () => listeners.delete(fn);
+  return () => {
+    listeners.delete(fn);
+  };
 }
 
 export function queueSnapshot() {
