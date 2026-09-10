@@ -89,10 +89,22 @@ async function driveFetch(url: string, init?: RequestInit) {
   return text ? JSON.parse(text) : {};
 }
 
+/** Accepts a raw ID or any Google Drive folder URL and returns the bare folder ID. */
+export function normalizeFolderId(raw: string) {
+  let v = raw.trim().replace(/^["']|["']$/g, "");
+  const byPath = v.match(/\/folders\/([A-Za-z0-9_-]{10,})/);
+  if (byPath) return byPath[1]!;
+  const byQuery = v.match(/[?&]id=([A-Za-z0-9_-]{10,})/);
+  if (byQuery) return byQuery[1]!;
+  if (v.includes("/")) v = v.split("?")[0]!.split("/").filter(Boolean).pop() ?? v;
+  const last = v.match(/([A-Za-z0-9_-]{10,})/);
+  return last ? last[1]! : v;
+}
+
 function rootFolderId() {
   const id = process.env["GOOGLE_DRIVE_FOLDER_ID"];
   if (!id) throw new Error("GOOGLE_DRIVE_FOLDER_ID belum diatur");
-  return id;
+  return normalizeFolderId(id);
 }
 
 const q = (s: string) => s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
