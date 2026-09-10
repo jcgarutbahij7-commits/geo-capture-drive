@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { compressImage } from "@/lib/image";
 import { loadProfile, newLocalId, saveReport } from "@/lib/local-store";
 import { PHOTO_FIELDS, type PhotoKey, type Profile, type Report } from "@/lib/types";
-import { uploadReport } from "@/lib/upload";
-import { playUploadSuccess } from "@/lib/sound";
+import { enqueueUpload } from "@/lib/upload-queue";
 
 export const Route = createFileRoute("/form")({
   head: () => ({
