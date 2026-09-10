@@ -148,3 +148,11 @@ export function dataUrlToBytes(dataUrl: string) {
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
 }
+
+/** Email of the connected Google Drive account, for the setup panel. */
+export async function driveAccount(): Promise<string | null> {
+  const res = (await driveFetch(`${DRIVE}/about?fields=user(emailAddress)`)) as {
+    user?: { emailAddress?: string };
+  };
+  return res.user?.emailAddress ?? null;
+}
