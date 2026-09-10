@@ -1,88 +1,25 @@
-const DRIVE = "https://www.googleapis.com/drive/v3";
-const UPLOAD = "https://www.googleapis.com/upload/drive/v3/files";
+const GATEWAY = "https://connector-gateway.lovable.dev/google_drive";
+const DRIVE = `${GATEWAY}/drive/v3`;
+const UPLOAD = `${GATEWAY}/upload/drive/v3/files`;
 
-type ServiceAccount = { client_email: string; private_key: string };
+const ROOT_FOLDER_NAME = "Laporan Lapangan";
 
-let cachedToken: { token: string; exp: number } | null = null;
-
-function b64url(bytes: Uint8Array) {
-  let s = "";
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function pemToBytes(pem: string) {
-  const body = pem
-    .replace(/-----BEGIN [^-]+-----/, "")
-    .replace(/-----END [^-]+-----/, "")
-    .replace(/\s+/g, "");
-  const raw = atob(body);
-  const out = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-  return out;
-}
-
-function serviceAccount(): ServiceAccount {
-  const raw = process.env["SERVICE_ACCOUNT_JSON"];
-  if (!raw) throw new Error("SERVICE_ACCOUNT_JSON belum diatur");
-  const parsed = JSON.parse(raw) as ServiceAccount;
-  if (!parsed.client_email || !parsed.private_key) {
-    throw new Error("SERVICE_ACCOUNT_JSON tidak valid");
+function authHeaders() {
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const connectionKey = process.env["GOOGLE_DRIVE_API_KEY"];
+  if (!lovableKey || !connectionKey) {
+    throw new Error("Koneksi Google Drive belum diatur");
   }
-  return { ...parsed, private_key: parsed.private_key.replace(/\\n/g, "\n") };
-}
-
-export async function getAccessToken(): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  if (cachedToken && cachedToken.exp - 60 > now) return cachedToken.token;
-
-  const sa = serviceAccount();
-  const header = b64url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
-  const claims = b64url(
-    new TextEncoder().encode(
-      JSON.stringify({
-        iss: sa.client_email,
-        scope: "https://www.googleapis.com/auth/drive",
-        aud: "https://oauth2.googleapis.com/token",
-        iat: now,
-        exp: now + 3600,
-      }),
-    ),
-  );
-  const key = await crypto.subtle.importKey(
-    "pkcs8",
-    pemToBytes(sa.private_key) as unknown as ArrayBuffer,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    key,
-    new TextEncoder().encode(`${header}.${claims}`) as unknown as ArrayBuffer,
-  );
-  const jwt = `${header}.${claims}.${b64url(new Uint8Array(sig))}`;
-
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Gagal autentikasi Google Drive [${res.status}]: ${text}`);
-  const json = JSON.parse(text) as { access_token: string; expires_in: number };
-  cachedToken = { token: json.access_token, exp: now + json.expires_in };
-  return json.access_token;
+  return {
+    Authorization: `Bearer ${lovableKey}`,
+    "X-Connection-Api-Key": connectionKey,
+  };
 }
 
 async function driveFetch(url: string, init?: RequestInit) {
-  const token = await getAccessToken();
   const res = await fetch(url, {
     ...init,
-    headers: { ...(init?.headers ?? {}), Authorization: `Bearer ${token}` },
+    headers: { ...(init?.headers ?? {}), ...authHeaders() },
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Google Drive error [${res.status}]: ${text}`);
@@ -99,12 +36,6 @@ export function normalizeFolderId(raw: string) {
   if (v.includes("/")) v = v.split("?")[0]!.split("/").filter(Boolean).pop() ?? v;
   const last = v.match(/([A-Za-z0-9_-]{10,})/);
   return last ? last[1]! : v;
-}
-
-function rootFolderId() {
-  const id = process.env["GOOGLE_DRIVE_FOLDER_ID"];
-  if (!id) throw new Error("GOOGLE_DRIVE_FOLDER_ID belum diatur");
-  return normalizeFolderId(id);
 }
 
 const q = (s: string) => s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
@@ -124,24 +55,50 @@ async function findChild(name: string, parentId: string, folderOnly: boolean) {
   return res.files?.[0]?.id ?? null;
 }
 
-async function ensureFolder(name: string, parentId: string) {
-  const existing = await findChild(name, parentId, true);
-  if (existing) return existing;
+async function createFolder(name: string, parentId?: string) {
   const created = (await driveFetch(`${DRIVE}/files?supportsAllDrives=true&fields=id`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       name,
       mimeType: "application/vnd.google-apps.folder",
-      parents: [parentId],
+      ...(parentId ? { parents: [parentId] } : {}),
     }),
   })) as { id: string };
   return created.id;
 }
 
+async function ensureFolder(name: string, parentId: string) {
+  const existing = await findChild(name, parentId, true);
+  return existing ?? createFolder(name, parentId);
+}
+
+let cachedRoot: string | null = null;
+
+/** Resolves the "Laporan Lapangan" root folder in the connected Google Drive account. */
+async function rootFolderId() {
+  if (cachedRoot) return cachedRoot;
+
+  const configured = process.env["GOOGLE_DRIVE_FOLDER_ID"];
+  if (configured) {
+    const id = normalizeFolderId(configured);
+    try {
+      await driveFetch(`${DRIVE}/files/${id}?fields=id&supportsAllDrives=true`);
+      cachedRoot = id;
+      return id;
+    } catch {
+      // Folder is not reachable with the connected account's grant — fall back below.
+    }
+  }
+
+  const found = await findChild(ROOT_FOLDER_NAME, "root", true);
+  cachedRoot = found ?? (await createFolder(ROOT_FOLDER_NAME));
+  return cachedRoot;
+}
+
 /** Creates (or reuses) nested folders under the "Laporan Lapangan" root folder. */
 export async function ensureFolderPath(path: string[]) {
-  let parent = rootFolderId();
+  let parent = await rootFolderId();
   for (const name of path) parent = await ensureFolder(name.trim() || "TANPA NAMA", parent);
   return parent;
 }
@@ -157,14 +114,13 @@ async function uploadBytes(
   const meta = replaceFileId ? { name } : { name, parents: [parentId] };
   const pre = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`;
   const body = new Blob([pre, bytes as BlobPart, `\r\n--${boundary}--`]);
-  const token = await getAccessToken();
   const url = replaceFileId
     ? `${UPLOAD}/${replaceFileId}?uploadType=multipart&supportsAllDrives=true&fields=id`
     : `${UPLOAD}?uploadType=multipart&supportsAllDrives=true&fields=id`;
   const res = await fetch(url, {
     method: replaceFileId ? "PATCH" : "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...authHeaders(),
       "Content-Type": `multipart/related; boundary=${boundary}`,
     },
     body,
@@ -191,4 +147,12 @@ export function dataUrlToBytes(dataUrl: string) {
   const out = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
+}
+
+/** Email of the connected Google Drive account, for the setup panel. */
+export async function driveAccount(): Promise<string | null> {
+  const res = (await driveFetch(`${DRIVE}/about?fields=user(emailAddress)`)) as {
+    user?: { emailAddress?: string };
+  };
+  return res.user?.emailAddress ?? null;
 }

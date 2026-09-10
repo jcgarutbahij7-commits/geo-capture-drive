@@ -121,18 +121,21 @@ export const driveStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
     if (!(await checkPassword(data.password))) throw new Error("Password salah");
-    const raw = process.env["SERVICE_ACCOUNT_JSON"];
+    const connected = Boolean(
+      process.env["GOOGLE_DRIVE_API_KEY"] && process.env["LOVABLE_API_KEY"],
+    );
     let email: string | null = null;
-    if (raw) {
+    if (connected) {
       try {
-        email = (JSON.parse(raw) as { client_email?: string }).client_email ?? null;
+        const { driveAccount } = await import("./drive.server");
+        email = await driveAccount();
       } catch {
         email = null;
       }
     }
     return {
-      serviceAccountConfigured: Boolean(raw),
+      serviceAccountConfigured: connected,
       serviceAccountEmail: email,
-      rootFolderConfigured: Boolean(process.env["GOOGLE_DRIVE_FOLDER_ID"]),
+      rootFolderConfigured: connected,
     };
   });
