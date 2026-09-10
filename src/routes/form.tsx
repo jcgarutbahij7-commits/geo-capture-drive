@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { compressImage } from "@/lib/image";
+import { compressImage, sizeLabel } from "@/lib/image";
 import { loadProfile, newLocalId, saveReport } from "@/lib/local-store";
 import { PHOTO_FIELDS, type PhotoKey, type Profile, type Report } from "@/lib/types";
 import { enqueueUpload } from "@/lib/upload-queue";
@@ -134,7 +134,7 @@ function FormPage() {
   function handleSubmit() {
     setBusy(true);
     enqueueUpload(buildReport("pending"));
-    setDialog("Data tersimpan. Pengiriman ke Google Drive jalan di latar belakang...");
+    setDialog("Laporan terkirim ke antrian");
     setBusy(false);
     backToDashboard();
   }
@@ -155,6 +155,7 @@ function FormPage() {
         </p>
         <h1 className="mt-1 text-2xl font-bold">
           {step === 1 ? "Data CPCL" : "Kirim Photo"}
+
         </h1>
         <p className="mt-1 text-sm opacity-90">Slide {step} dari 2</p>
       </div>
@@ -278,11 +279,11 @@ function FormPage() {
             15. SIMPAN DI HANDPHONE
           </button>
           <button
-            className="btn-primary"
+            className="btn-send"
             disabled={!allPhotos || !coords || busy}
             onClick={() => void handleSubmit()}
           >
-            {busy ? "MENGIRIM..." : "16. KIRIM KE GOOGLE DRIVE"}
+            {busy ? "📤 MENGIRIM KE PERUSAHAAN..." : "📤 KIRIM KE PERUSAHAAN"}
           </button>
           {(!allPhotos || !coords) && (
             <p className="text-center text-xs text-muted-foreground">
@@ -349,6 +350,7 @@ function PhotoBox({
   onPick: (dataUrl: string) => void;
 }) {
   const [working, setWorking] = useState(false);
+  const [bytes, setBytes] = useState<number | null>(null);
   const inputId = `photo-${index}`;
 
   return (
@@ -365,7 +367,13 @@ function PhotoBox({
           {index}. {label}
         </p>
         <p className="mb-2 text-xs text-muted-foreground">
-          {working ? "Mengompres..." : value ? "Sudah diisi (di bawah 200 KB)" : "Wajib diisi"}
+          {working
+            ? "Mengompres..."
+            : value
+              ? bytes != null
+                ? sizeLabel(bytes)
+                : "Sudah diisi"
+              : "Wajib diisi"}
         </p>
         <label htmlFor={inputId} className="btn-soft py-2 text-sm">
           {value ? "GANTI PHOTO" : "AMBIL PHOTO"}
@@ -381,7 +389,9 @@ function PhotoBox({
             if (!file) return;
             setWorking(true);
             try {
-              onPick(await compressImage(file));
+              const out = await compressImage(file);
+              setBytes(out.bytes);
+              onPick(out.dataUrl);
             } finally {
               setWorking(false);
               e.target.value = "";
