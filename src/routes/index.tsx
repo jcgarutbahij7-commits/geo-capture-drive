@@ -3,7 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import { loadProfile, loadReports, saveProfile } from "@/lib/local-store";
 import { mapsUrl, type Profile, type Report } from "@/lib/types";
 import { driveStatus, verifyPassword } from "@/lib/owner.functions";
-import { enqueueUpload, queueSnapshot, subscribeQueue, type QueueEntry } from "@/lib/upload-queue";
+import {
+  enqueueUpload,
+  queueSnapshot,
+  retryUpload,
+  startBackgroundSender,
+  subscribeQueue,
+  type QueueEntry,
+} from "@/lib/upload-queue";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,7 +35,7 @@ export const Route = createFileRoute("/")({
 
 function statusChip(r: Report, entry?: QueueEntry) {
   if (entry?.state === "uploading")
-    return <span className="chip-pending">MENGIRIM...</span>;
+    return <span className="chip-pending">MENGIRIM KE PERUSAHAAN...</span>;
   if (entry?.state === "error")
     return <span className="chip-pending bg-destructive text-destructive-foreground">GAGAL ✗</span>;
   if (r.status === "sent") return <span className="chip-sent">TERKIRIM ✓</span>;
@@ -62,6 +69,7 @@ function Dashboard() {
       await refresh();
     })();
     setQueue(queueSnapshot());
+    startBackgroundSender();
     return subscribeQueue(() => {
       setQueue(queueSnapshot());
       void refresh();
@@ -69,12 +77,15 @@ function Dashboard() {
   }, [refresh]);
 
   function send(report: Report) {
-    setMessage(null);
-    enqueueUpload(report);
+    setMessage("Laporan terkirim ke antrian");
+    retryUpload(report);
+    setTimeout(() => setMessage(null), 3000);
   }
 
   function sendAll() {
+    setMessage("Laporan terkirim ke antrian");
     reports.filter((r) => r.status !== "sent").forEach((r) => enqueueUpload(r));
+    setTimeout(() => setMessage(null), 3000);
   }
 
   async function openSetup() {
@@ -128,8 +139,8 @@ function Dashboard() {
           <Link to="/form" className="btn-primary">
             + ISIAN BARU
           </Link>
-          <button className="btn-accent" onClick={sendAll} disabled={!pendingCount}>
-            KIRIM SEMUA ({pendingCount})
+          <button className="btn-send" onClick={sendAll} disabled={!pendingCount}>
+            📤 KIRIM KE PERUSAHAAN ({pendingCount})
           </button>
         </div>
       )}
@@ -181,11 +192,11 @@ function Dashboard() {
                   <>
                     {queue.get(r.localId)?.state === "error" && (
                       <p className="mt-2 text-sm text-destructive">
-                        Gagal: {queue.get(r.localId)?.detail}
+                        {queue.get(r.localId)?.detail}
                       </p>
                     )}
-                    <button className="btn-outline mt-3" onClick={() => send(r)}>
-                      KIRIM ULANG
+                    <button className="btn-send mt-3" onClick={() => send(r)}>
+                      📤 KIRIM ULANG KE PERUSAHAAN
                     </button>
                   </>
                 )
@@ -196,7 +207,7 @@ function Dashboard() {
       )}
 
       <div className="mt-8 card">
-        <h2 className="text-base font-bold">Setup Google Drive</h2>
+        <h2 className="text-base font-bold">Setup Pengiriman</h2>
         {setupOpen && setup ? (
           <div className="mt-2 grid gap-2 text-sm">
             <p>
