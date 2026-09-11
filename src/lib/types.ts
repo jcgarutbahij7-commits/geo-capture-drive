@@ -68,3 +68,20 @@ export function mapsUrl(lat: number | null, lng: number | null) {
   if (lat == null || lng == null) return "";
   return `https://www.google.com/maps?q=${lat},${lng}`;
 }
+
+/** Converts an Indonesian 08xx number to WhatsApp 62xx format. */
+export function waNumber(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  return `62${digits}`;
+}
+
+export function isValidWa(phone: string) {
+  const d = phone.replace(/\D/g, "");
+  return /^08\d{8,12}$/.test(d);
+}
+
+export function waLink(phone: string, text: string) {
+  return `https://wa.me/${waNumber(phone)}?text=${encodeURIComponent(text)}`;
+}
