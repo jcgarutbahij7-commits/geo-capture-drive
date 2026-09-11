@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          id: string
+          owner_wa: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_wa?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_wa?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       submissions: {
         Row: {
           address: string
