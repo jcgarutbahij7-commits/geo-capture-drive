@@ -1,8 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { downloadExcel, listCompanies, listReports, type OwnerRow } from "@/lib/owner.functions";
+import {
+  downloadExcel,
+  getOwnerWa,
+  listCompanies,
+  listReports,
+  setOwnerWa,
+  type OwnerRow,
+} from "@/lib/owner.functions";
 import { announceOwnerData } from "@/lib/sound";
-import { mapsUrl } from "@/lib/types";
+import { isValidWa, mapsUrl, waLink } from "@/lib/types";
 
 export const Route = createFileRoute("/owner")({
   head: () => ({
@@ -43,7 +50,22 @@ function OwnerDashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const [ownerWa, setOwnerWaInput] = useState("");
+  const [waNote, setWaNote] = useState<string | null>(null);
   const soundRef = useRef(true);
+
+  useEffect(() => {
+    void getOwnerWa().then((r) => setOwnerWaInput(r.ownerWa ?? ""));
+  }, []);
+
+  async function saveOwnerWa() {
+    try {
+      await setOwnerWa({ data: { password, ownerWa } });
+      setWaNote("Nomor WA owner tersimpan.");
+    } catch (e) {
+      setWaNote(e instanceof Error ? e.message : "Gagal menyimpan nomor.");
+    }
+  }
 
   useEffect(() => {
     const s = localStorage.getItem(SOUND_KEY);
@@ -179,6 +201,22 @@ function OwnerDashboard() {
           <p className="text-xs text-muted-foreground">
             Suara: "PT {companyName || "PERUSAHAAN"} - DATA DITERIMA DARI [NAMA PETUGAS]"
           </p>
+          <label className="label mt-2">Nomor WA Owner (08xxxxxxxxxx)</label>
+          <input
+            className="field"
+            inputMode="numeric"
+            placeholder="08xxxxxxxxxx"
+            value={ownerWa}
+            onChange={(e) => setOwnerWaInput(e.target.value.replace(/\D/g, ""))}
+          />
+          <button
+            className="btn-soft"
+            disabled={!isValidWa(ownerWa)}
+            onClick={() => void saveOwnerWa()}
+          >
+            SIMPAN NOMOR WA OWNER
+          </button>
+          {waNote && <p className="text-xs text-muted-foreground">{waNote}</p>}
         </div>
       )}
 
@@ -256,11 +294,22 @@ function OwnerDashboard() {
                           {r.coordinate}
                         </a>
                       )}
-                      <p className="mt-1">
+                      <div className="mt-1 flex items-center justify-between gap-2">
                         <span className={r.status === "terkirim" ? "chip-sent" : "chip-pending"}>
                           {r.status.toUpperCase()}
                         </span>
-                      </p>
+                        <a
+                          className="btn-send w-auto px-3 py-2 text-sm"
+                          href={waLink(
+                            r.officerPhone,
+                            `Halo *${r.officerName}*, laporan *${r.cpclName}* perlu revisi: `,
+                          )}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          💬 CHAT WA
+                        </a>
+                      </div>
                     </li>
                   ))}
                 </ul>

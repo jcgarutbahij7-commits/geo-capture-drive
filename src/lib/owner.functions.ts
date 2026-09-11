@@ -139,3 +139,29 @@ export const driveStatus = createServerFn({ method: "POST" })
       rootFolderConfigured: connected,
     };
   });
+
+/** Owner WhatsApp number, readable by every officer so they can contact the owner. */
+export const getOwnerWa = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("app_settings")
+    .select("owner_wa")
+    .eq("id", "global")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return { ownerWa: data?.owner_wa ?? null };
+});
+
+export const setOwnerWa = createServerFn({ method: "POST" })
+  .inputValidator((data: { password: string; ownerWa: string }) => data)
+  .handler(async ({ data }) => {
+    if (!(await checkPassword(data.password))) throw new Error("Password salah");
+    const digits = data.ownerWa.replace(/\D/g, "");
+    if (!/^08\d{8,12}$/.test(digits)) throw new Error("Format harus 08xxxxxxxxxx");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("app_settings")
+      .upsert({ id: "global", owner_wa: digits });
+    if (error) throw new Error(error.message);
+    return { ownerWa: digits };
+  });

@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { loadProfile, loadReports, saveProfile } from "@/lib/local-store";
-import { mapsUrl, type Profile, type Report } from "@/lib/types";
-import { driveStatus, verifyPassword } from "@/lib/owner.functions";
+import { isValidWa, mapsUrl, waLink, type Profile, type Report } from "@/lib/types";
+import { driveStatus, getOwnerWa, verifyPassword } from "@/lib/owner.functions";
 import {
   enqueueUpload,
   queueSnapshot,
@@ -57,6 +57,14 @@ function Dashboard() {
     rootFolderConfigured: boolean;
   } | null>(null);
 
+  const [ownerWa, setOwnerWa] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getOwnerWa()
+      .then((r) => setOwnerWa(r.ownerWa))
+      .catch(() => setOwnerWa(null));
+  }, []);
+
   const refresh = useCallback(async () => {
     setReports(await loadReports());
   }, []);
@@ -110,6 +118,16 @@ function Dashboard() {
         <p className="mt-1 text-sm opacity-90">
           {profile ? `${profile.officerName} - ${profile.officerPhone}` : "Lengkapi data petugas"}
         </p>
+        {ownerWa && (
+          <a
+            className="btn-send mt-3 w-auto px-4 py-2 text-sm"
+            href={waLink(ownerWa, `Halo Pak, saya *${profile?.officerName ?? "PETUGAS"}*`)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            💬 HUBUNGI OWNER
+          </a>
+        )}
       </div>
 
       {editing || !profile ? (
@@ -282,14 +300,18 @@ function ProfileForm({
         />
       </div>
       <div>
-        <label className="label">Nomor Handphone Petugas</label>
+        <label className="label">Nomor WA Petugas (08xxxxxxxxxx)</label>
         <input
           className="field"
           inputMode="numeric"
           pattern="[0-9]*"
+          placeholder="08xxxxxxxxxx"
           value={phone}
           onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
         />
+        {phone && !isValidWa(phone) && (
+          <p className="mt-1 text-xs text-destructive">Format harus 08xxxxxxxxxx</p>
+        )}
       </div>
       <button
         className="btn-primary"
