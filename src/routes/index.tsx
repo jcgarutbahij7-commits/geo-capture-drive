@@ -3,7 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import { loadProfile, loadReports, saveProfile } from "@/lib/local-store";
 import { mapsUrl, type Profile, type Report } from "@/lib/types";
 import { driveStatus, verifyPassword } from "@/lib/owner.functions";
-import { enqueueUpload, queueSnapshot, subscribeQueue, type QueueEntry } from "@/lib/upload-queue";
+import {
+  enqueueUpload,
+  queueSnapshot,
+  retryUpload,
+  startBackgroundSender,
+  subscribeQueue,
+  type QueueEntry,
+} from "@/lib/upload-queue";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,7 +35,7 @@ export const Route = createFileRoute("/")({
 
 function statusChip(r: Report, entry?: QueueEntry) {
   if (entry?.state === "uploading")
-    return <span className="chip-pending">MENGIRIM...</span>;
+    return <span className="chip-pending">MENGIRIM KE PERUSAHAAN...</span>;
   if (entry?.state === "error")
     return <span className="chip-pending bg-destructive text-destructive-foreground">GAGAL ✗</span>;
   if (r.status === "sent") return <span className="chip-sent">TERKIRIM ✓</span>;
