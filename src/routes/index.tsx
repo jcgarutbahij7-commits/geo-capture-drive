@@ -57,6 +57,14 @@ function Dashboard() {
     rootFolderConfigured: boolean;
   } | null>(null);
 
+  const [ownerWa, setOwnerWa] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getOwnerWa()
+      .then((r) => setOwnerWa(r.ownerWa))
+      .catch(() => setOwnerWa(null));
+  }, []);
+
   const refresh = useCallback(async () => {
     setReports(await loadReports());
   }, []);
