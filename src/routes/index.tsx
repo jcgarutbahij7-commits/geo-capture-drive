@@ -69,6 +69,7 @@ function Dashboard() {
       await refresh();
     })();
     setQueue(queueSnapshot());
+    startBackgroundSender();
     return subscribeQueue(() => {
       setQueue(queueSnapshot());
       void refresh();
@@ -76,12 +77,15 @@ function Dashboard() {
   }, [refresh]);
 
   function send(report: Report) {
-    setMessage(null);
-    enqueueUpload(report);
+    setMessage("Laporan terkirim ke antrian");
+    retryUpload(report);
+    setTimeout(() => setMessage(null), 3000);
   }
 
   function sendAll() {
+    setMessage("Laporan terkirim ke antrian");
     reports.filter((r) => r.status !== "sent").forEach((r) => enqueueUpload(r));
+    setTimeout(() => setMessage(null), 3000);
   }
 
   async function openSetup() {
@@ -135,8 +139,8 @@ function Dashboard() {
           <Link to="/form" className="btn-primary">
             + ISIAN BARU
           </Link>
-          <button className="btn-accent" onClick={sendAll} disabled={!pendingCount}>
-            KIRIM SEMUA ({pendingCount})
+          <button className="btn-send" onClick={sendAll} disabled={!pendingCount}>
+            📤 KIRIM KE PERUSAHAAN ({pendingCount})
           </button>
         </div>
       )}
@@ -188,11 +192,11 @@ function Dashboard() {
                   <>
                     {queue.get(r.localId)?.state === "error" && (
                       <p className="mt-2 text-sm text-destructive">
-                        Gagal: {queue.get(r.localId)?.detail}
+                        {queue.get(r.localId)?.detail}
                       </p>
                     )}
-                    <button className="btn-outline mt-3" onClick={() => send(r)}>
-                      KIRIM ULANG
+                    <button className="btn-send mt-3" onClick={() => send(r)}>
+                      📤 KIRIM ULANG KE PERUSAHAAN
                     </button>
                   </>
                 )
