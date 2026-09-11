@@ -1,8 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { downloadExcel, listCompanies, listReports, type OwnerRow } from "@/lib/owner.functions";
+import {
+  downloadExcel,
+  getOwnerWa,
+  listCompanies,
+  listReports,
+  setOwnerWa,
+  type OwnerRow,
+} from "@/lib/owner.functions";
 import { announceOwnerData } from "@/lib/sound";
-import { mapsUrl } from "@/lib/types";
+import { isValidWa, mapsUrl, waLink } from "@/lib/types";
 
 export const Route = createFileRoute("/owner")({
   head: () => ({
