@@ -207,7 +207,7 @@ function Dashboard() {
       )}
 
       <div className="mt-8 card">
-        <h2 className="text-base font-bold">Setup Google Drive</h2>
+        <h2 className="text-base font-bold">Setup Pengiriman</h2>
         {setupOpen && setup ? (
           <div className="mt-2 grid gap-2 text-sm">
             <p>
