@@ -165,4 +165,48 @@
     color: #ffffff;
     @apply inline-flex w-auto items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-transform active:scale-[0.98];
   }
+  .owner-shell {
+    @apply mx-auto w-full max-w-md px-4 pb-28;
+  }
+  @media (min-width: 1024px) {
+    .owner-shell {
+      width: 95%;
+      max-width: 1600px;
+      @apply px-0;
+    }
+  }
+  .owner-sticky-header {
+    background-image: var(--gradient-hero);
+    @apply sticky top-0 z-50 -mx-4 px-5 pt-4 pb-4 text-primary-foreground;
+    box-shadow: 0 2px 8px oklch(0.3 0.04 160 / 20%);
+  }
+  @media (min-width: 1024px) {
+    .owner-sticky-header {
+      @apply mx-0 rounded-b-2xl;
+    }
+  }
+  .owner-grid {
+    @apply grid grid-cols-1 gap-4;
+  }
+  @media (min-width: 1024px) {
+    .owner-grid {
+      grid-template-columns: 340px minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .owner-table-wrap {
+    @apply overflow-x-auto;
+    max-height: calc(20 * 2.75rem);
+    overflow-y: auto;
+  }
+  .owner-table {
+    @apply w-full text-sm;
+    border-collapse: collapse;
+  }
+  .owner-table th {
+    @apply sticky top-0 bg-muted px-3 py-2 text-left text-xs font-bold tracking-wide text-muted-foreground uppercase;
+  }
+  .owner-table td {
+    @apply border-t px-3 py-2 align-top;
+  }
 }
