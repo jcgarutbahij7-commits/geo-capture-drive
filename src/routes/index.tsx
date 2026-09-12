@@ -181,7 +181,7 @@ function Dashboard() {
         {ownerWa && (
           <a
             className="btn-send mt-3 w-auto px-4 py-2 text-sm"
-            href={waLink(ownerWa, `Halo Pak, saya *${profile?.officerName ?? "PETUGAS"}*`)})
+            href={waLink(ownerWa, `Halo Pak, saya *${profile?.officerName ?? "PETUGAS"}*`)}
             target="_blank"
             rel="noreferrer"
           >
