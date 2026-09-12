@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadProfile, loadReports, saveProfile } from "@/lib/local-store";
 import { isValidWa, mapsUrl, waLink, type Profile, type Report } from "@/lib/types";
 import { driveStatus, getOwnerWa, verifyPassword } from "@/lib/owner.functions";
@@ -33,14 +33,28 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
+const HIDDEN_KEY = "hidden-report-ids";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 function statusChip(r: Report, entry?: QueueEntry) {
   if (entry?.state === "uploading")
     return <span className="chip-pending">MENGIRIM KE PERUSAHAAN...</span>;
   if (entry?.state === "error")
     return <span className="chip-pending bg-destructive text-destructive-foreground">GAGAL ✗</span>;
   if (r.status === "sent") return <span className="chip-sent">TERKIRIM ✓</span>;
-  if (r.status === "pending") return <span className="chip-pending">PENDING</span>;
+  if (r.status === "pending") return <span className="chip-pending">MENUNGGU</span>;
   return <span className="chip-draft">TERSIMPAN</span>;
+}
+
+function isActiveReport(r: Report, entry?: QueueEntry) {
+  if (entry?.state === "error") return true;
+  if (r.status !== "sent") return true;
+  return false;
+}
+
+function isAutoHidden(r: Report) {
+  if (r.status !== "sent") return false;
+  return Date.now() - new Date(r.savedAt).getTime() > DAY_MS;
 }
 
 function Dashboard() {
@@ -58,11 +72,22 @@ function Dashboard() {
   } | null>(null);
 
   const [ownerWa, setOwnerWa] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     void getOwnerWa()
       .then((r) => setOwnerWa(r.ownerWa))
       .catch(() => setOwnerWa(null));
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HIDDEN_KEY);
+      if (raw) setHiddenIds(new Set(JSON.parse(raw)));
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const refresh = useCallback(async () => {
@@ -84,6 +109,41 @@ function Dashboard() {
     });
   }, [refresh]);
 
+  const sortedReports = useMemo(() => {
+    const list = [...reports];
+    list.sort((a, b) => {
+      const aActive = isActiveReport(a, queue.get(a.localId));
+      const bActive = isActiveReport(b, queue.get(b.localId));
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      return new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime();
+    });
+    return list;
+  }, [reports, queue]);
+
+  const visibleReports = useMemo(() => {
+    if (showAll) return sortedReports;
+    return sortedReports
+      .filter((r) => {
+        if (hiddenIds.has(r.localId)) return false;
+        if (isAutoHidden(r)) return false;
+        return true;
+      })
+      .slice(0, 5);
+  }, [sortedReports, hiddenIds, showAll]);
+
+  function toggleArchive(localId: string) {
+    const next = new Set(hiddenIds);
+    if (next.has(localId)) next.delete(localId);
+    else next.add(localId);
+    setHiddenIds(next);
+    try {
+      localStorage.setItem(HIDDEN_KEY, JSON.stringify([...next]));
+    } catch {
+      /* ignore */
+    }
+  }
+
   function send(report: Report) {
     setMessage("Laporan terkirim ke antrian");
     retryUpload(report);
@@ -99,7 +159,7 @@ function Dashboard() {
   async function openSetup() {
     const { ok } = await verifyPassword({ data: { password: setupPass } });
     if (!ok) {
-      setMessage("Password setup salah.");
+      setMessage("Kode admin salah.");
       return;
     }
     setSetup(await driveStatus({ data: { password: setupPass } }));
@@ -130,6 +190,22 @@ function Dashboard() {
         )}
       </div>
 
+      <div className="sticky-header">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold">Dashboard Petugas</h2>
+          <Link to="/form" className="btn-primary w-auto px-4 py-2 text-sm">
+            + ISIAN BARU
+          </Link>
+        </div>
+        <button
+          className="btn-send mt-3"
+          onClick={sendAll}
+          disabled={!profile || !pendingCount}
+        >
+          📤 KIRIM KE PERUSAHAAN ({pendingCount})
+        </button>
+      </div>
+
       {editing || !profile ? (
         <ProfileForm
           initial={profile}
@@ -152,40 +228,42 @@ function Dashboard() {
         </div>
       )}
 
-      {profile && !editing && (
-        <div className="mt-4 grid gap-3">
-          <Link to="/form" className="btn-primary">
-            + ISIAN BARU
-          </Link>
-          <button className="btn-send" onClick={sendAll} disabled={!pendingCount}>
-            📤 KIRIM KE PERUSAHAAN ({pendingCount})
-          </button>
-        </div>
-      )}
-
       {message && (
         <p className="mt-4 rounded-xl bg-secondary px-4 py-3 text-sm text-secondary-foreground">
           {message}
         </p>
       )}
 
-      <h2 className="mt-6 mb-2 text-lg font-bold">Status Pengiriman</h2>
-      {reports.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Belum ada data.</p>
+      <h2 className="section-title">Status Pengiriman</h2>
+      {visibleReports.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {showAll ? "Belum ada riwayat." : "Belum ada data aktif."}
+        </p>
       ) : (
         <ul className="grid gap-3">
-          {reports.map((r) => (
+          {visibleReports.map((r) => (
             <li key={r.localId} className="card">
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-bold">
+                <div className="min-w-0">
+                  <p className="truncate font-bold">
                     {r.cpclNo} - {r.cpclName}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {r.village} - {new Date(r.savedAt).toLocaleString("id-ID")}
                   </p>
                 </div>
-                {statusChip(r, queue.get(r.localId))}
+                <div className="flex shrink-0 items-center gap-1">
+                  {statusChip(r, queue.get(r.localId))}
+                  {r.status === "sent" && (
+                    <button
+                      className="btn-archive"
+                      title={hiddenIds.has(r.localId) ? "Kembalikan" : "Arsipkan"}
+                      onClick={() => toggleArchive(r.localId)}
+                    >
+                      {hiddenIds.has(r.localId) ? "↩️" : "🗄️"}
+                    </button>
+                  )}
+                </div>
               </div>
               <p className="mt-2 text-sm">
                 Pelimpahan: {r.pelimpahan === "YA" ? `YA - ${r.pelimpahanName}` : "BUKAN"}
@@ -224,10 +302,23 @@ function Dashboard() {
         </ul>
       )}
 
-      <div className="mt-8 card">
-        <h2 className="text-base font-bold">Setup Pengiriman</h2>
+      {reports.length > 0 && (
+        <button
+          className="btn-outline-gray mt-4"
+          onClick={() => setShowAll((s) => !s)}
+        >
+          {showAll ? "SEMBUNYIKAN RIWAYAT LAMA" : "🗄️ LIHAT SEMUA RIWAYAT"}
+        </button>
+      )}
+
+      <Link to="/owner" className="mt-6 block text-center text-sm font-semibold text-primary">
+        Dashboard Owner
+      </Link>
+
+      <div className="admin-section">
+        <p className="mb-2 font-semibold">Pengaturan Admin</p>
         {setupOpen && setup ? (
-          <div className="mt-2 grid gap-2 text-sm">
+          <div className="grid gap-2">
             <p>
               Folder utama: <b>Laporan Lapangan</b> (disinkronkan ke D:\Laporan Lapangan)
             </p>
@@ -240,29 +331,26 @@ function Dashboard() {
               Struktur folder: Nama Perusahaan &gt; Nama Desa &gt; [nomor cpcl] - [nama cpcl] - [nama
               pelimpahan]
             </p>
-            <button className="btn-soft" onClick={() => setSetupOpen(false)}>
+            <button className="btn-admin" onClick={() => setSetupOpen(false)}>
               Sembunyikan
             </button>
           </div>
         ) : (
-          <div className="mt-2 grid gap-2">
+          <div className="grid gap-2">
             <input
               className="field"
+              style={{ fontSize: 14, paddingTop: 10, paddingBottom: 10 }}
               type="password"
-              placeholder="Password setup"
+              placeholder="Kode Admin"
               value={setupPass}
               onChange={(e) => setSetupPass(e.target.value)}
             />
-            <button className="btn-soft" onClick={() => void openSetup()}>
-              Buka Setup
+            <button className="btn-admin" onClick={() => void openSetup()}>
+              Masuk Admin
             </button>
           </div>
         )}
       </div>
-
-      <Link to="/owner" className="mt-4 block text-center text-sm font-semibold text-primary">
-        Dashboard Owner
-      </Link>
     </main>
   );
 }
