@@ -73,7 +73,11 @@ function OwnerDashboard() {
     setDelNote(null);
     try {
       await deleteReports({
-        data: { password: delPass, company: target.company, village: target.village },
+        data: {
+          password: delPass,
+          company: target.company,
+          ...(target.village ? { village: target.village } : {}),
+        },
       });
       setTarget(null);
       setDelPass("");
