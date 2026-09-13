@@ -179,3 +179,20 @@ export const setOwnerWa = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ownerWa: digits };
   });
+
+/**
+ * Removes report rows from the app database only.
+ * Files already stored in Google Drive are never touched.
+ */
+export const deleteReports = createServerFn({ method: "POST" })
+  .inputValidator((data: { password: string; company: string; village?: string }) => data)
+  .handler(async ({ data }) => {
+    if (!(await checkDeletePassword(data.password))) throw new Error("Password hapus salah");
+    if (!data.company.trim()) throw new Error("Perusahaan wajib dipilih");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin.from("submissions").delete().eq("company", data.company);
+    if (data.village) q = q.eq("village", data.village);
+    const { error } = await q;
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
