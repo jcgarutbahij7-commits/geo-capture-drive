@@ -2,13 +2,27 @@ import { createServerFn } from "@tanstack/react-start";
 import { buildXls, REKAP_HEADERS } from "./xls";
 import { coordText } from "./types";
 
-async function checkPassword(password: string) {
+async function matches(password: string, expected: string | undefined) {
+  if (!expected) return false;
   const { createHash, timingSafeEqual } = await import("node:crypto");
-  const expected = process.env["OWNER_PASSWORD"];
-  if (!expected) throw new Error("OWNER_PASSWORD belum diatur");
   const a = createHash("sha256").update(password, "utf8").digest();
   const b = createHash("sha256").update(expected, "utf8").digest();
   return timingSafeEqual(a, b);
+}
+
+/** Login gate for the owner dashboard. */
+async function checkPassword(password: string) {
+  return (
+    (await matches(password, process.env["OWNER_LOGIN_PASSWORD"])) ||
+    (await matches(password, process.env["OWNER_PASSWORD"]))
+  );
+}
+
+/** Separate, stronger password required for destructive actions. */
+async function checkDeletePassword(password: string) {
+  const expected = process.env["OWNER_DELETE_PASSWORD"];
+  if (!expected) throw new Error("OWNER_DELETE_PASSWORD belum diatur");
+  return matches(password, expected);
 }
 
 export type OwnerRow = {
