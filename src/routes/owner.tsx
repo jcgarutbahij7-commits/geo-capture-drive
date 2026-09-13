@@ -331,6 +331,18 @@ function OwnerDashboard() {
                 <button className="btn-accent" onClick={() => void download()}>
                   UNDUH EXCEL {company}
                 </button>
+                <button
+                  className="rounded-xl bg-destructive px-4 py-3 font-bold text-destructive-foreground"
+                  onClick={() => {
+                    setDelNote(null);
+                    setTarget({ company });
+                  }}
+                >
+                  🗑️ HAPUS DATA {company}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Menghapus data di aplikasi saja. Photo & file di Google Drive tetap aman.
+                </p>
               </>
             )}
           </div>
