@@ -368,11 +368,22 @@ function OwnerDashboard() {
 
               {groups.map(([village, items]) => (
                 <div key={village} className="card mt-4 overflow-hidden p-0">
-                  <div className="flex items-baseline justify-between bg-secondary px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-2 bg-secondary px-4 py-3">
                     <h2 className="text-lg font-bold">{village}</h2>
-                    <span className="text-sm font-semibold text-muted-foreground">
-                      [{items.length} CPCL]
-                    </span>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        [{items.length} CPCL]
+                      </span>
+                      <button
+                        className="rounded-full bg-destructive px-3 py-1 text-xs font-bold text-destructive-foreground"
+                        onClick={() => {
+                          setDelNote(null);
+                          setTarget({ company, village });
+                        }}
+                      >
+                        🗑️ HAPUS DESA
+                      </button>
+                    </div>
                   </div>
                   <div className="owner-table-wrap">
                     <table className="owner-table">
