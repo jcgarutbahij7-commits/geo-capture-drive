@@ -455,6 +455,50 @@ function OwnerDashboard() {
         </div>
       </div>
 
+      {target && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4">
+          <div className="card grid w-full max-w-md gap-3">
+            <h2 className="text-lg font-bold">Yakin mau dihapus?</h2>
+            <p className="text-sm">
+              {target.village
+                ? `Semua data desa ${target.village} (${target.company}) akan dihapus dari aplikasi.`
+                : `Semua data perusahaan ${target.company} akan dihapus dari aplikasi.`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Photo dan file yang sudah masuk ke Google Drive TIDAK akan dihapus.
+            </p>
+            <label className="label">Password Hapus</label>
+            <input
+              className="field"
+              type="password"
+              placeholder="Password hapus"
+              value={delPass}
+              onChange={(e) => setDelPass(e.target.value)}
+            />
+            {delNote && <p className="text-sm text-destructive">{delNote}</p>}
+            <div className="flex gap-3">
+              <button
+                className="btn-soft flex-1"
+                onClick={() => {
+                  setTarget(null);
+                  setDelPass("");
+                  setDelNote(null);
+                }}
+              >
+                TIDAK
+              </button>
+              <button
+                className="flex-1 rounded-xl bg-destructive px-4 py-3 font-bold text-destructive-foreground disabled:opacity-60"
+                disabled={!delPass || deleting}
+                onClick={() => void confirmDelete()}
+              >
+                {deleting ? "MENGHAPUS..." : "YA, HAPUS"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-lg">
           {toast}
