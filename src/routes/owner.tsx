@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  deleteReports,
   downloadExcel,
   getOwnerWa,
   listCompanies,
@@ -59,6 +60,39 @@ function OwnerDashboard() {
   // Filter & sort desa
   const [villageFilter, setVillageFilter] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("az");
+
+  // Hapus data (dialog konfirmasi + password khusus)
+  const [target, setTarget] = useState<{ company: string; village?: string } | null>(null);
+  const [delPass, setDelPass] = useState("");
+  const [delNote, setDelNote] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function confirmDelete() {
+    if (!target) return;
+    setDeleting(true);
+    setDelNote(null);
+    try {
+      await deleteReports({
+        data: {
+          password: delPass,
+          company: target.company,
+          ...(target.village ? { village: target.village } : {}),
+        },
+      });
+      setTarget(null);
+      setDelPass("");
+      known.current = new Set();
+      const data = await listReports({ data: { password, company } });
+      setRows(data);
+      data.forEach((r) => known.current.add(r.id));
+      setToast("Data berhasil dihapus");
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      setDelNote(e instanceof Error ? e.message : "Gagal menghapus data");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     void getOwnerWa().then((r) => setOwnerWaInput(r.ownerWa ?? ""));
@@ -297,6 +331,18 @@ function OwnerDashboard() {
                 <button className="btn-accent" onClick={() => void download()}>
                   UNDUH EXCEL {company}
                 </button>
+                <button
+                  className="rounded-xl bg-destructive px-4 py-3 font-bold text-destructive-foreground"
+                  onClick={() => {
+                    setDelNote(null);
+                    setTarget({ company });
+                  }}
+                >
+                  🗑️ HAPUS DATA {company}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Menghapus data di aplikasi saja. Photo & file di Google Drive tetap aman.
+                </p>
               </>
             )}
           </div>
@@ -334,11 +380,22 @@ function OwnerDashboard() {
 
               {groups.map(([village, items]) => (
                 <div key={village} className="card mt-4 overflow-hidden p-0">
-                  <div className="flex items-baseline justify-between bg-secondary px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-2 bg-secondary px-4 py-3">
                     <h2 className="text-lg font-bold">{village}</h2>
-                    <span className="text-sm font-semibold text-muted-foreground">
-                      [{items.length} CPCL]
-                    </span>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        [{items.length} CPCL]
+                      </span>
+                      <button
+                        className="rounded-full bg-destructive px-3 py-1 text-xs font-bold text-destructive-foreground"
+                        onClick={() => {
+                          setDelNote(null);
+                          setTarget({ company, village });
+                        }}
+                      >
+                        🗑️ HAPUS DESA
+                      </button>
+                    </div>
                   </div>
                   <div className="owner-table-wrap">
                     <table className="owner-table">
@@ -397,6 +454,50 @@ function OwnerDashboard() {
           )}
         </div>
       </div>
+
+      {target && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4">
+          <div className="card grid w-full max-w-md gap-3">
+            <h2 className="text-lg font-bold">Yakin mau dihapus?</h2>
+            <p className="text-sm">
+              {target.village
+                ? `Semua data desa ${target.village} (${target.company}) akan dihapus dari aplikasi.`
+                : `Semua data perusahaan ${target.company} akan dihapus dari aplikasi.`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Photo dan file yang sudah masuk ke Google Drive TIDAK akan dihapus.
+            </p>
+            <label className="label">Password Hapus</label>
+            <input
+              className="field"
+              type="password"
+              placeholder="Password hapus"
+              value={delPass}
+              onChange={(e) => setDelPass(e.target.value)}
+            />
+            {delNote && <p className="text-sm text-destructive">{delNote}</p>}
+            <div className="flex gap-3">
+              <button
+                className="btn-soft flex-1"
+                onClick={() => {
+                  setTarget(null);
+                  setDelPass("");
+                  setDelNote(null);
+                }}
+              >
+                TIDAK
+              </button>
+              <button
+                className="flex-1 rounded-xl bg-destructive px-4 py-3 font-bold text-destructive-foreground disabled:opacity-60"
+                disabled={!delPass || deleting}
+                onClick={() => void confirmDelete()}
+              >
+                {deleting ? "MENGHAPUS..." : "YA, HAPUS"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-lg">

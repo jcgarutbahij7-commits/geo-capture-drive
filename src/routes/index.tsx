@@ -171,10 +171,15 @@ function Dashboard() {
   return (
     <main className="app-shell">
       <div className="hero-bar">
-        <p className="text-xs font-semibold tracking-widest uppercase opacity-80">
-          Laporan Lapangan
-        </p>
-        <h1 className="mt-1 text-2xl font-bold">{profile?.company || "DASHBOARD PETUGAS"}</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-bold">{profile?.company || "DASHBOARD PETUGAS"}</h1>
+          <button
+            className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-xs font-bold"
+            onClick={() => setEditing(true)}
+          >
+            Edit Profil
+          </button>
+        </div>
         <p className="mt-1 text-sm opacity-90">
           {profile ? `${profile.officerName} - ${profile.officerPhone}` : "Lengkapi data petugas"}
         </p>
@@ -185,28 +190,31 @@ function Dashboard() {
             target="_blank"
             rel="noreferrer"
           >
-            💬 HUBUNGI OWNER
+            💬 HUBUNGI ADMIN
           </a>
         )}
       </div>
 
       <div className="sticky-header">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold">Dashboard Petugas</h2>
-          <Link to="/form" className="btn-primary w-auto px-4 py-2 text-sm">
+        <h2 className="text-base font-bold">Dashboard Petugas</h2>
+        <div className="mt-3 flex gap-3">
+          <Link
+            to="/form"
+            className="flex-1 rounded-xl bg-[#16a34a] px-4 py-3 text-center font-bold text-white"
+          >
             + ISIAN BARU
           </Link>
+          <button
+            className="flex-1 rounded-xl bg-green-300 px-4 py-3 font-bold text-green-900 disabled:opacity-60"
+            onClick={sendAll}
+            disabled={!profile || !pendingCount}
+          >
+            KIRIM KE PERUSAHAAN ({pendingCount})
+          </button>
         </div>
-        <button
-          className="btn-send mt-3"
-          onClick={sendAll}
-          disabled={!profile || !pendingCount}
-        >
-          📤 KIRIM KE PERUSAHAAN ({pendingCount})
-        </button>
       </div>
 
-      {editing || !profile ? (
+      {(editing || !profile) && (
         <ProfileForm
           initial={profile}
           onSaved={async (p) => {
@@ -215,17 +223,6 @@ function Dashboard() {
             setEditing(false);
           }}
         />
-      ) : (
-        <div className="card flex items-center justify-between">
-          <div>
-            <p className="label">Petugas</p>
-            <p className="font-semibold">{profile.officerName}</p>
-            <p className="text-sm text-muted-foreground">{profile.officerPhone}</p>
-          </div>
-          <button className="btn-soft w-auto px-4 py-2 text-sm" onClick={() => setEditing(true)}>
-            Edit
-          </button>
-        </div>
       )}
 
       {message && (
