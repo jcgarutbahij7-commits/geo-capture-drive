@@ -61,6 +61,35 @@ function OwnerDashboard() {
   const [villageFilter, setVillageFilter] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("az");
 
+  // Hapus data (dialog konfirmasi + password khusus)
+  const [target, setTarget] = useState<{ company: string; village?: string } | null>(null);
+  const [delPass, setDelPass] = useState("");
+  const [delNote, setDelNote] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function confirmDelete() {
+    if (!target) return;
+    setDeleting(true);
+    setDelNote(null);
+    try {
+      await deleteReports({
+        data: { password: delPass, company: target.company, village: target.village },
+      });
+      setTarget(null);
+      setDelPass("");
+      known.current = new Set();
+      const data = await listReports({ data: { password, company } });
+      setRows(data);
+      data.forEach((r) => known.current.add(r.id));
+      setToast("Data berhasil dihapus");
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      setDelNote(e instanceof Error ? e.message : "Gagal menghapus data");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   useEffect(() => {
     void getOwnerWa().then((r) => setOwnerWaInput(r.ownerWa ?? ""));
   }, []);
