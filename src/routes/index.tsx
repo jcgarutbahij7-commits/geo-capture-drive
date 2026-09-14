@@ -314,42 +314,64 @@ function Dashboard() {
         Dashboard Owner
       </Link>
 
-      <div className="admin-section">
-        <p className="mb-2 font-semibold">Pengaturan Admin</p>
-        {setupOpen && setup ? (
-          <div className="grid gap-2">
-            <p>
-              Folder utama: <b>Laporan Lapangan</b> (disinkronkan ke D:\Laporan Lapangan)
-            </p>
-            <p>
-              Service Account: {setup.serviceAccountConfigured ? "Aktif" : "Belum diatur"}
-              {setup.serviceAccountEmail ? ` - ${setup.serviceAccountEmail}` : ""}
-            </p>
-            <p>ID folder utama: {setup.rootFolderConfigured ? "Sudah diatur" : "Belum diatur"}</p>
-            <p className="text-muted-foreground">
-              Struktur folder: Nama Perusahaan &gt; Nama Desa &gt; [nomor cpcl] - [nama cpcl] - [nama
-              pelimpahan]
-            </p>
-            <button className="btn-admin" onClick={() => setSetupOpen(false)}>
-              Sembunyikan
+      {!adminVisible ? (
+        <button
+          className="admin-toggle"
+          onClick={() => setAdminVisible(true)}
+          title="Pengaturan Admin"
+        >
+          ⚙️ Admin
+        </button>
+      ) : (
+        <div className="admin-section">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="font-semibold">Pengaturan Admin</p>
+            <button
+              className="text-muted-foreground"
+              onClick={() => {
+                setAdminVisible(false);
+                setSetupOpen(false);
+              }}
+            >
+              ✕ Tutup
             </button>
           </div>
-        ) : (
-          <div className="grid gap-2">
-            <input
-              className="field"
-              style={{ fontSize: 14, paddingTop: 10, paddingBottom: 10 }}
-              type="password"
-              placeholder="Kode Admin"
-              value={setupPass}
-              onChange={(e) => setSetupPass(e.target.value)}
-            />
-            <button className="btn-admin" onClick={() => void openSetup()}>
-              Masuk Admin
-            </button>
-          </div>
-        )}
-      </div>
+          {setupOpen && setup ? (
+            <div className="grid gap-2">
+              <p>
+                Folder utama: <b>Laporan Lapangan</b> (disinkronkan ke D:\Laporan Lapangan)
+              </p>
+              <p>
+                Service Account: {setup.serviceAccountConfigured ? "Aktif" : "Belum diatur"}
+                {setup.serviceAccountEmail ? ` - ${setup.serviceAccountEmail}` : ""}
+              </p>
+              <p>ID folder utama: {setup.rootFolderConfigured ? "Sudah diatur" : "Belum diatur"}</p>
+              <p className="text-muted-foreground">
+                Struktur folder: Nama Perusahaan &gt; Nama Desa &gt; [nomor cpcl] - [nama cpcl] - [nama
+                pelimpahan]
+              </p>
+              <button className="btn-admin" onClick={() => setSetupOpen(false)}>
+                Sembunyikan
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              <input
+                className="field"
+                style={{ fontSize: 14, paddingTop: 10, paddingBottom: 10 }}
+                type="password"
+                placeholder="Kode Admin"
+                value={setupPass}
+                onChange={(e) => setSetupPass(e.target.value)}
+              />
+              <button className="btn-admin" onClick={() => void openSetup()}>
+                Masuk Admin
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
     </main>
   );
 }
