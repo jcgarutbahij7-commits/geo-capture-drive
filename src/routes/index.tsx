@@ -174,7 +174,7 @@ function Dashboard() {
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-xl font-bold">{profile?.company || "DASHBOARD PETUGAS"}</h1>
           <button
-            className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-xs font-bold"
+            className="shrink-0 rounded-full bg-primary-foreground/20 px-3 py-1 text-xs font-bold"
             onClick={() => setEditing(true)}
           >
             Edit Profil
@@ -200,12 +200,12 @@ function Dashboard() {
         <div className="mt-3 flex gap-3">
           <Link
             to="/form"
-            className="flex-1 rounded-xl bg-[#16a34a] px-4 py-3 text-center font-bold text-white"
+            className="flex-1 rounded-xl bg-send px-4 py-3 text-center font-bold text-send-foreground"
           >
             + ISIAN BARU
           </Link>
           <button
-            className="flex-1 rounded-xl bg-green-300 px-4 py-3 font-bold text-green-900 disabled:opacity-60"
+            className="flex-1 rounded-xl bg-send-soft px-4 py-3 font-bold text-send-soft-foreground disabled:opacity-60"
             onClick={sendAll}
             disabled={!profile || !pendingCount}
           >

@@ -33,6 +33,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-send: var(--send);
+  --color-send-foreground: var(--send-foreground);
+  --color-send-soft: var(--send-soft);
+  --color-send-soft-foreground: var(--send-soft-foreground);
 }
 
 :root {
@@ -58,8 +62,42 @@
   --border: oklch(0.9 0.015 158);
   --input: oklch(0.93 0.015 158);
   --ring: oklch(0.52 0.13 162);
+  --send: oklch(0.58 0.17 145);
+  --send-foreground: oklch(0.99 0.01 150);
+  --send-soft: oklch(0.88 0.13 145);
+  --send-soft-foreground: oklch(0.27 0.08 145);
   --gradient-hero: linear-gradient(140deg, oklch(0.52 0.13 162) 0%, oklch(0.42 0.1 190) 100%);
   --shadow-card: 0 1px 2px oklch(0.3 0.04 160 / 8%), 0 8px 24px oklch(0.3 0.04 160 / 8%);
+}
+
+.dark {
+  --background: oklch(0.17 0.018 160);
+  --foreground: oklch(0.94 0.012 155);
+  --card: oklch(0.22 0.022 160);
+  --card-foreground: oklch(0.94 0.012 155);
+  --primary: oklch(0.68 0.13 158);
+  --primary-foreground: oklch(0.14 0.025 160);
+  --secondary: oklch(0.28 0.025 160);
+  --secondary-foreground: oklch(0.91 0.015 155);
+  --muted: oklch(0.25 0.018 160);
+  --muted-foreground: oklch(0.7 0.018 158);
+  --accent: oklch(0.76 0.14 76);
+  --accent-foreground: oklch(0.2 0.04 70);
+  --destructive: oklch(0.65 0.19 25);
+  --destructive-foreground: oklch(0.98 0.01 30);
+  --success: oklch(0.64 0.15 150);
+  --success-foreground: oklch(0.13 0.025 150);
+  --warning: oklch(0.74 0.13 82);
+  --warning-foreground: oklch(0.2 0.04 75);
+  --border: oklch(0.34 0.02 160);
+  --input: oklch(0.3 0.022 160);
+  --ring: oklch(0.68 0.13 158);
+  --send: oklch(0.62 0.17 145);
+  --send-foreground: oklch(0.12 0.025 150);
+  --send-soft: oklch(0.36 0.09 145);
+  --send-soft-foreground: oklch(0.92 0.03 145);
+  --gradient-hero: linear-gradient(140deg, oklch(0.39 0.1 162) 0%, oklch(0.3 0.075 190) 100%);
+  --shadow-card: 0 1px 2px oklch(0.04 0.01 160 / 30%), 0 10px 28px oklch(0.04 0.01 160 / 24%);
 }
 
 @layer base {
@@ -71,6 +109,7 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
+    transition: background-color 180ms ease, color 180ms ease;
   }
   h1,
   h2,
@@ -124,9 +163,7 @@
     @apply border bg-card text-foreground;
   }
   .btn-send {
-    background-color: #16a34a;
-    color: #ffffff;
-    @apply inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-4 text-lg font-bold transition-transform active:scale-[0.98] disabled:opacity-50;
+    @apply inline-flex w-full items-center justify-center gap-2 rounded-xl bg-send px-4 py-4 text-lg font-bold text-send-foreground transition-transform active:scale-[0.98] disabled:opacity-50;
   }
   .chip,
   .chip-sent,
@@ -154,16 +191,13 @@
     @apply inline-flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-base text-secondary-foreground transition-transform active:scale-90;
   }
   .btn-outline-gray {
-    @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-400 bg-transparent px-4 py-3 text-sm font-semibold text-gray-600 transition-transform active:scale-[0.98];
+    @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-transparent px-4 py-3 text-sm font-semibold text-muted-foreground transition-transform active:scale-[0.98];
   }
   .admin-section {
-    @apply mt-10 border-t pt-4 text-sm;
-    color: #6b7280;
+    @apply mt-10 border-t border-border pt-4 text-sm text-muted-foreground;
   }
   .btn-admin {
-    background-color: #9ca3af;
-    color: #ffffff;
-    @apply inline-flex w-auto items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-transform active:scale-[0.98];
+    @apply inline-flex w-auto items-center justify-center gap-2 rounded-lg bg-muted-foreground px-4 py-2 text-sm font-semibold text-background transition-transform active:scale-[0.98];
   }
   .owner-shell {
     @apply mx-auto w-full max-w-md px-4 pb-28;
