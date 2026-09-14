@@ -37,6 +37,7 @@
   --color-send-foreground: var(--send-foreground);
   --color-send-soft: var(--send-soft);
   --color-send-soft-foreground: var(--send-soft-foreground);
+  --color-hero-foreground: var(--hero-foreground);
 }
 
 :root {
@@ -66,6 +67,7 @@
   --send-foreground: oklch(0.99 0.01 150);
   --send-soft: oklch(0.88 0.13 145);
   --send-soft-foreground: oklch(0.27 0.08 145);
+  --hero-foreground: oklch(0.99 0.01 150);
   --gradient-hero: linear-gradient(140deg, oklch(0.52 0.13 162) 0%, oklch(0.42 0.1 190) 100%);
   --shadow-card: 0 1px 2px oklch(0.3 0.04 160 / 8%), 0 8px 24px oklch(0.3 0.04 160 / 8%);
 }
@@ -93,9 +95,10 @@
   --input: oklch(0.3 0.022 160);
   --ring: oklch(0.68 0.13 158);
   --send: oklch(0.62 0.17 145);
-  --send-foreground: oklch(0.12 0.025 150);
+  --send-foreground: oklch(0.99 0.01 150);
   --send-soft: oklch(0.36 0.09 145);
   --send-soft-foreground: oklch(0.92 0.03 145);
+  --hero-foreground: oklch(0.99 0.01 150);
   --gradient-hero: linear-gradient(140deg, oklch(0.39 0.1 162) 0%, oklch(0.3 0.075 190) 100%);
   --shadow-card: 0 1px 2px oklch(0.04 0.01 160 / 30%), 0 10px 28px oklch(0.04 0.01 160 / 24%);
 }
@@ -125,7 +128,7 @@
   }
   .hero-bar {
     background-image: var(--gradient-hero);
-    @apply -mx-4 mb-4 px-5 pt-8 pb-6 text-primary-foreground;
+    @apply -mx-4 mb-4 px-5 pt-8 pb-6 text-hero-foreground;
   }
   .card {
     background-color: var(--color-card);
@@ -211,7 +214,7 @@
   }
   .owner-sticky-header {
     background-image: var(--gradient-hero);
-    @apply sticky top-0 z-50 -mx-4 px-5 pt-4 pb-4 text-primary-foreground;
+    @apply sticky top-0 z-50 -mx-4 px-5 pt-4 pb-4 text-hero-foreground;
     box-shadow: 0 2px 8px oklch(0.3 0.04 160 / 20%);
   }
   @media (min-width: 1024px) {
