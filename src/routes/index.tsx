@@ -74,6 +74,8 @@ function Dashboard() {
   const [ownerWa, setOwnerWa] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [adminVisible, setAdminVisible] = useState(false);
+
 
   useEffect(() => {
     void getOwnerWa()
