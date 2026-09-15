@@ -199,9 +199,14 @@
   .admin-section {
     @apply mt-10 border-t border-border pt-4 text-sm text-muted-foreground;
   }
+  .admin-toggle {
+    @apply mx-auto mt-10 block w-auto rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground/70 transition-colors hover:text-muted-foreground;
+    background-color: transparent;
+  }
   .btn-admin {
     @apply inline-flex w-auto items-center justify-center gap-2 rounded-lg bg-muted-foreground px-4 py-2 text-sm font-semibold text-background transition-transform active:scale-[0.98];
   }
+
   .owner-shell {
     @apply mx-auto w-full max-w-md px-4 pb-28;
   }
